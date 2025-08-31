@@ -1,0 +1,62 @@
+type Query {
+    objects(type: String, limit: Int): [Object!]!
+    object(id: ID!): Object
+    connectedObjects(id: ID!, depth: Int): [Object!]!
+    links(type: String): [Link!]!
+    actions(objectId: String, user: String): [Action!]!
+}
+
+type Mutation {
+    createObject(input: ObjectInput!): Object!
+    updateObject(id: ID!, input: ObjectInput!): Object!
+    deleteObject(id: ID!): Boolean!
+    createLink(input: LinkInput!): Link!
+    deleteLink(id: ID!): Boolean!
+    createAction(input: ActionInput!): Action!
+}
+
+type Object {
+    id: ID!
+    type: String!
+    properties: Map!
+    outgoingLinks: [Link!]!
+    incomingLinks: [Link!]!
+}
+
+type Link {
+    id: ID!
+    type: String!
+    source: Object!
+    target: Object!
+    properties: Map!
+}
+
+type Action {
+    id: ID!
+    type: String!
+    objectId: String!
+    changes: Map!
+    timestamp: String!
+    user: String!
+}
+
+input ObjectInput {
+    type: String!
+    properties: Map!
+}
+
+input LinkInput {
+    type: String!
+    sourceId: ID!
+    targetId: ID!
+    properties: Map!
+}
+
+input ActionInput {
+    type: String!
+    objectId: String!
+    changes: Map!
+    user: String!
+}
+
+scalar Map

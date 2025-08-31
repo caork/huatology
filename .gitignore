@@ -1,0 +1,48 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Maven build directory
+target/
+
+# Node.js dependencies
+node_modules/
+
+# Frontend build outputs
+dist/
+build/
+
+# Vite cache
+.vite/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.swp
+*.bak
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.staging
+
+# Compiled Java classes
+*.class
+
+# Other
+*.jar
+*.war
+*.ear
