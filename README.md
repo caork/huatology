@@ -211,6 +211,64 @@ mutation {
 }
 ```
 
+#### Create Link (Relationship)
+```graphql
+mutation {
+  createLink(input: {
+    type: "WORKS_FOR"
+    sourceId: "person-uuid-1"
+    targetId: "company-uuid-1"
+    properties: {
+      role: "Software Engineer"
+      startDate: "2023-01-15"
+    }
+  }) {
+    id
+    type
+    source {
+      id
+      type
+    }
+    target {
+      id
+      type
+    }
+    properties
+  }
+}
+```
+
+#### Query Objects with Relationships
+```graphql
+query {
+  objects(type: "Person", limit: 10) {
+    id
+    type
+    properties
+    outgoingLinks {
+      id
+      type
+      target {
+        id
+        type
+        properties
+      }
+      properties
+    }
+    incomingLinks {
+      id
+      type
+      source {
+        id
+        type
+        properties
+      }
+      properties
+    }
+  }
+}
+```
+
 ### REST API Endpoints
 
 #### Data Ingestion
@@ -265,7 +323,7 @@ Content-Type: text/plain
 - ✅ Interactive visualization
 - ✅ Data ingestion pipeline
 - ✅ Node details and filtering
-- ✅ Relationship modeling
+- ✅ Relationship modeling and creation
 - ✅ Automated startup/stop scripts
 
 ### Future Enhancements

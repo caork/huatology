@@ -39,6 +39,24 @@ const CREATE_OBJECT = gql`
   }
 `
 
+const CREATE_LINK = gql`
+  mutation CreateLink($input: LinkInput!) {
+    createLink(input: $input) {
+      id
+      type
+      source {
+        id
+        type
+      }
+      target {
+        id
+        type
+      }
+      properties
+    }
+  }
+`
+
 function AppContent() {
   const { user, logout, getAccessToken } = useAuth()
   const [selectedType, setSelectedType] = useState('')
@@ -47,6 +65,11 @@ function AppContent() {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [newObjectType, setNewObjectType] = useState('')
   const [newObjectProperties, setNewObjectProperties] = useState([{ key: '', value: '' }])
+  const [showCreateLinkForm, setShowCreateLinkForm] = useState(false)
+  const [newLinkType, setNewLinkType] = useState('')
+  const [selectedSourceId, setSelectedSourceId] = useState('')
+  const [selectedTargetId, setSelectedTargetId] = useState('')
+  const [newLinkProperties, setNewLinkProperties] = useState([{ key: '', value: '' }])
   const cyRef = useRef(null)
 
   // Create Apollo Client with auth link
@@ -90,6 +113,22 @@ function AppContent() {
     }
   })
 
+  const [createLink, { loading: creatingLink }] = useMutation(CREATE_LINK, {
+    client,
+    onCompleted: () => {
+      refetch()
+      setShowCreateLinkForm(false)
+      setNewLinkType('')
+      setSelectedSourceId('')
+      setSelectedTargetId('')
+      setNewLinkProperties([{ key: '', value: '' }])
+    },
+    onError: (error) => {
+      console.error('Error creating link:', error)
+      alert('Error creating link: ' + error.message)
+    }
+  })
+
   useEffect(() => {
     if (cyRef.current && data?.objects) {
       renderGraph(data.objects)
@@ -116,6 +155,42 @@ function AppContent() {
         }
       }
     })
+  }
+
+  const handleCreateLink = () => {
+    const properties = {}
+    newLinkProperties.forEach(prop => {
+      if (prop.key && prop.value) {
+        properties[prop.key] = prop.value
+      }
+    })
+
+    createLink({
+      variables: {
+        input: {
+          type: newLinkType,
+          sourceId: selectedSourceId,
+          targetId: selectedTargetId,
+          properties
+        }
+      }
+    })
+  }
+
+  const addLinkProperty = () => {
+    setNewLinkProperties([...newLinkProperties, { key: '', value: '' }])
+  }
+
+  const updateLinkProperty = (index, field, value) => {
+    const updated = [...newLinkProperties]
+    updated[index][field] = value
+    setNewLinkProperties(updated)
+  }
+
+  const removeLinkProperty = (index) => {
+    if (newLinkProperties.length > 1) {
+      setNewLinkProperties(newLinkProperties.filter((_, i) => i !== index))
+    }
   }
 
   const addProperty = () => {
@@ -253,6 +328,9 @@ function AppContent() {
             <button onClick={() => setShowCreateForm(!showCreateForm)}>
               {showCreateForm ? 'Cancel' : 'Create Object'}
             </button>
+            <button onClick={() => setShowCreateLinkForm(!showCreateLinkForm)}>
+              {showCreateLinkForm ? 'Cancel Link' : 'Create Link'}
+            </button>
           </div>
           <div className="user-info">
             {user && (
@@ -316,6 +394,84 @@ function AppContent() {
                 {creating ? 'Creating...' : 'Create Object'}
               </button>
               <button onClick={() => setShowCreateForm(false)}>Cancel</button>
+            </div>
+          </div>
+        )}
+        {showCreateLinkForm && (
+          <div className="create-form-panel">
+            <h3>Create New Link</h3>
+            <div className="form-group">
+              <label>Link Type:</label>
+              <input
+                type="text"
+                value={newLinkType}
+                onChange={(e) => setNewLinkType(e.target.value)}
+                placeholder="e.g., WORKS_FOR, OWNS, CONTAINS"
+              />
+            </div>
+            <div className="form-group">
+              <label>Source Object:</label>
+              <select
+                value={selectedSourceId}
+                onChange={(e) => setSelectedSourceId(e.target.value)}
+              >
+                <option value="">Select source object...</option>
+                {objects.map(obj => (
+                  <option key={obj.id} value={obj.id}>
+                    {obj.type} ({obj.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Target Object:</label>
+              <select
+                value={selectedTargetId}
+                onChange={(e) => setSelectedTargetId(e.target.value)}
+              >
+                <option value="">Select target object...</option>
+                {objects.map(obj => (
+                  <option key={obj.id} value={obj.id}>
+                    {obj.type} ({obj.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="properties-section">
+              <h4>Link Properties:</h4>
+              {newLinkProperties.map((prop, index) => (
+                <div key={index} className="property-row">
+                  <input
+                    type="text"
+                    placeholder="Key"
+                    value={prop.key}
+                    onChange={(e) => updateLinkProperty(index, 'key', e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Value"
+                    value={prop.value}
+                    onChange={(e) => updateLinkProperty(index, 'value', e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeLinkProperty(index)}
+                    disabled={newLinkProperties.length === 1}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button type="button" onClick={addLinkProperty}>Add Property</button>
+            </div>
+            <div className="form-actions">
+              <button
+                onClick={handleCreateLink}
+                disabled={creatingLink || !newLinkType.trim() || !selectedSourceId || !selectedTargetId}
+              >
+                {creatingLink ? 'Creating...' : 'Create Link'}
+              </button>
+              <button onClick={() => setShowCreateLinkForm(false)}>Cancel</button>
             </div>
           </div>
         )}

@@ -153,8 +153,7 @@ public class GraphQLController {
     @PreAuthorize("isAuthenticated()")
     public Boolean deleteLink(@Argument String id) {
         try {
-            Long linkId = Long.parseLong(id);
-            linkService.deleteLink(linkId);
+            linkService.deleteLink(id);
             return true;
         } catch (Exception e) {
             return false;
