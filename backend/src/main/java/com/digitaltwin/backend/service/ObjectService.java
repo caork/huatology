@@ -17,7 +17,7 @@ public class ObjectService {
     private ObjectRepository objectRepository;
 
     public List<ObjectEntity> getAllObjects() {
-        return objectRepository.findAll();
+        return objectRepository.findAllWithRelationships();
     }
 
     public Optional<ObjectEntity> getObjectById(String id) {
@@ -29,7 +29,7 @@ public class ObjectService {
     }
 
     public List<ObjectEntity> getObjectsByType(String type) {
-        return objectRepository.findByType(type);
+        return objectRepository.findByTypeWithRelationships(type);
     }
 
     public List<ObjectEntity> getConnectedObjects(String id, int depth) {

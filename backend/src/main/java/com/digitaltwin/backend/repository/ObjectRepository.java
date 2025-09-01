@@ -24,4 +24,10 @@ public interface ObjectRepository extends Neo4jRepository<ObjectEntity, String> 
 
     @Query("MATCH (o:Object)-[r:LINKS_TO]-(connected:Object) WHERE elementId(o) = $id AND r.type = $linkType RETURN connected")
     List<ObjectEntity> findConnectedObjectsByLinkType(String id, String linkType);
+
+    @Query("MATCH (o:Object) OPTIONAL MATCH (o)-[r:LINKS_TO]->(target:Object) RETURN o, collect(r), collect(target)")
+    List<ObjectEntity> findAllWithRelationships();
+
+    @Query("MATCH (o:Object) WHERE o.type = $type OPTIONAL MATCH (o)-[r:LINKS_TO]->(target:Object) RETURN o, collect(r), collect(target)")
+    List<ObjectEntity> findByTypeWithRelationships(String type);
 }
