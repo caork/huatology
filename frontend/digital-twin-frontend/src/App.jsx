@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import cytoscape from 'cytoscape'
 import coseBilkent from 'cytoscape-cose-bilkent'
-import { ApolloClient, InMemoryCache, gql, useQuery, createHttpLink, ApolloProvider } from '@apollo/client'
+import { ApolloClient, InMemoryCache, gql, useQuery, useMutation, createHttpLink, ApolloProvider } from '@apollo/client'
 import { setContext } from '@apollo/client/link/context'
 import { useAuth } from './context/AuthContext'
 import { AuthProvider } from './context/AuthContext'
@@ -29,36 +29,65 @@ const GET_OBJECTS = gql`
   }
 `
 
+const CREATE_OBJECT = gql`
+  mutation CreateObject($input: ObjectInput!) {
+    createObject(input: $input) {
+      id
+      type
+      properties
+    }
+  }
+`
+
 function AppContent() {
   const { user, logout, getAccessToken } = useAuth()
   const [selectedType, setSelectedType] = useState('')
   const [limit, setLimit] = useState(50)
   const [selectedNode, setSelectedNode] = useState(null)
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [newObjectType, setNewObjectType] = useState('')
+  const [newObjectProperties, setNewObjectProperties] = useState([{ key: '', value: '' }])
   const cyRef = useRef(null)
 
   // Create Apollo Client with auth link
-  const httpLink = createHttpLink({
-    uri: 'http://localhost:8080/graphql',
-  })
+  const client = useMemo(() => {
+    const httpLink = createHttpLink({
+      uri: 'http://localhost:8080/graphql',
+    })
 
-  const authLink = setContext((_, { headers }) => {
-    const token = getAccessToken()
-    return {
-      headers: {
-        ...headers,
-        authorization: token ? `Bearer ${token}` : "",
+    const authLink = setContext((_, { headers }) => {
+      const token = getAccessToken()
+      return {
+        headers: {
+          ...headers,
+          authorization: token ? `Bearer ${token}` : "",
+        }
       }
-    }
-  })
+    })
 
-  const client = new ApolloClient({
-    link: authLink.concat(httpLink),
-    cache: new InMemoryCache()
-  })
+    return new ApolloClient({
+      link: authLink.concat(httpLink),
+      cache: new InMemoryCache()
+    })
+  }, [getAccessToken()])
 
   const { loading, error, data, refetch } = useQuery(GET_OBJECTS, {
     variables: { type: selectedType || null, limit },
     client
+  })
+
+  const [createObject, { loading: creating }] = useMutation(CREATE_OBJECT, {
+    client,
+    onCompleted: () => {
+      refetch()
+      setShowCreateForm(false)
+      setNewObjectType('')
+      setNewObjectProperties([{ key: '', value: '' }])
+    },
+    onError: (error) => {
+      console.error('Error creating object:', error)
+      alert('Error creating object: ' + error.message)
+    }
   })
 
   useEffect(() => {
@@ -69,6 +98,40 @@ function AppContent() {
 
   const fetchData = () => {
     refetch()
+  }
+
+  const handleCreateObject = () => {
+    const properties = {}
+    newObjectProperties.forEach(prop => {
+      if (prop.key && prop.value) {
+        properties[prop.key] = prop.value
+      }
+    })
+
+    createObject({
+      variables: {
+        input: {
+          type: newObjectType,
+          properties
+        }
+      }
+    })
+  }
+
+  const addProperty = () => {
+    setNewObjectProperties([...newObjectProperties, { key: '', value: '' }])
+  }
+
+  const updateProperty = (index, field, value) => {
+    const updated = [...newObjectProperties]
+    updated[index][field] = value
+    setNewObjectProperties(updated)
+  }
+
+  const removeProperty = (index) => {
+    if (newObjectProperties.length > 1) {
+      setNewObjectProperties(newObjectProperties.filter((_, i) => i !== index))
+    }
   }
 
   const renderGraph = (objects) => {
@@ -187,6 +250,9 @@ function AppContent() {
             <button onClick={fetchData} disabled={loading}>
               {loading ? 'Loading...' : 'Refresh Data'}
             </button>
+            <button onClick={() => setShowCreateForm(!showCreateForm)}>
+              {showCreateForm ? 'Cancel' : 'Create Object'}
+            </button>
           </div>
           <div className="user-info">
             {user && (
@@ -203,6 +269,56 @@ function AppContent() {
           </div>
         </header>
       <main className="app-main">
+        {showCreateForm && (
+          <div className="create-form-panel">
+            <h3>Create New Object</h3>
+            <div className="form-group">
+              <label>Type:</label>
+              <input
+                type="text"
+                value={newObjectType}
+                onChange={(e) => setNewObjectType(e.target.value)}
+                placeholder="e.g., Person, Product, Organization"
+              />
+            </div>
+            <div className="properties-section">
+              <h4>Properties:</h4>
+              {newObjectProperties.map((prop, index) => (
+                <div key={index} className="property-row">
+                  <input
+                    type="text"
+                    placeholder="Key"
+                    value={prop.key}
+                    onChange={(e) => updateProperty(index, 'key', e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Value"
+                    value={prop.value}
+                    onChange={(e) => updateProperty(index, 'value', e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeProperty(index)}
+                    disabled={newObjectProperties.length === 1}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button type="button" onClick={addProperty}>Add Property</button>
+            </div>
+            <div className="form-actions">
+              <button
+                onClick={handleCreateObject}
+                disabled={creating || !newObjectType.trim()}
+              >
+                {creating ? 'Creating...' : 'Create Object'}
+              </button>
+              <button onClick={() => setShowCreateForm(false)}>Cancel</button>
+            </div>
+          </div>
+        )}
         <div className="graph-container">
           <div ref={cyRef} className="cytoscape-container"></div>
         </div>

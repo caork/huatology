@@ -9,17 +9,17 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface LinkRepository extends Neo4jRepository<ObjectEntity, String> {
+public interface LinkRepository extends Neo4jRepository<Link, Long> {
 
-    @Query("MATCH (source:Object)-[r:LINKS_TO]->(target:Object) WHERE r.type = $type RETURN source, collect(r), collect(target)")
-    List<ObjectEntity> findLinksByType(String type);
+    @Query("MATCH (source:Object)-[r:LINKS_TO]->(target:Object) WHERE r.type = $type RETURN r")
+    List<Link> findLinksByType(String type);
 
-    @Query("MATCH (source:Object)-[r:LINKS_TO]->(target:Object) WHERE source.id = $sourceId RETURN r, target")
+    @Query("MATCH (source:Object)-[r:LINKS_TO]->(target:Object) WHERE elementId(source) = $sourceId RETURN r")
     List<Link> findLinksBySourceId(String sourceId);
 
-    @Query("MATCH (source:Object)-[r:LINKS_TO]->(target:Object) WHERE target.id = $targetId RETURN r, source")
+    @Query("MATCH (source:Object)-[r:LINKS_TO]->(target:Object) WHERE elementId(target) = $targetId RETURN r")
     List<Link> findLinksByTargetId(String targetId);
 
-    @Query("MATCH (source:Object)-[r:LINKS_TO]->(target:Object) WHERE r.id = $linkId RETURN r")
+    @Query("MATCH (source:Object)-[r:LINKS_TO]->(target:Object) WHERE elementId(r) = $linkId RETURN r")
     Link findLinkById(String linkId);
 }

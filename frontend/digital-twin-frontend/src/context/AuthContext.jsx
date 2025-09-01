@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import jwtDecode from 'jwt-decode'
+import { jwtDecode } from 'jwt-decode'
 import { authService } from '../services/authService'
 
 const AuthContext = createContext()
@@ -37,7 +37,12 @@ export const AuthProvider = ({ children }) => {
             })
           } else {
             // Token expired, try refresh
-            await refreshAccessToken()
+            try {
+              await refreshAccessToken()
+            } catch (refreshError) {
+              console.error('Token refresh failed during initialization:', refreshError)
+              logout()
+            }
           }
         } catch (error) {
           console.error('Error decoding token:', error)
@@ -147,6 +152,34 @@ export const AuthProvider = ({ children }) => {
     setError(null)
   }
 
+  const skipLogin = async () => {
+    try {
+      setError(null)
+      setLoading(true)
+
+      const response = await authService.skipLogin()
+
+      const { accessToken, refreshToken, username, email, roles } = response.data
+      localStorage.setItem('accessToken', accessToken)
+      localStorage.setItem('refreshToken', refreshToken)
+
+      setUser({
+        id: 1, // Test user ID
+        username: username,
+        email: email,
+        roles: roles || []
+      })
+
+      return { success: true }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Skip login failed'
+      setError(errorMessage)
+      return { success: false, error: errorMessage }
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getAccessToken = () => {
     return localStorage.getItem('accessToken')
   }
@@ -166,6 +199,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    skipLogin,
     refreshAccessToken,
     getAccessToken,
     isAuthenticated,

@@ -122,9 +122,9 @@ The easiest way to run the system is using the provided scripts:
 
 ### Accessing the Application
 - **Frontend**: http://localhost:5173 (requires authentication)
-- **GraphQL Playground**: http://localhost:8080/graphiql
-- **Backend API**: http://localhost:8080
-- **Backend Health**: http://localhost:8080/actuator/health
+- **GraphQL Playground**: http://localhost:8092/graphiql
+- **Backend API**: http://localhost:8092
+- **Backend Health**: http://localhost:8092/actuator/health
 
 ### First Time Setup
 1. Run `./start.sh` to start all services

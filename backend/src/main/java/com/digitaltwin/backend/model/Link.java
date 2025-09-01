@@ -1,5 +1,6 @@
 package com.digitaltwin.backend.model;
 
+import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.RelationshipProperties;
 import org.springframework.data.neo4j.core.schema.TargetNode;
@@ -10,6 +11,9 @@ import java.util.Map;
 public class Link {
 
     @Id
+    @GeneratedValue
+    private Long internalId;
+
     private String id;
 
     private String type; // LinkType name
@@ -28,6 +32,14 @@ public class Link {
         this.type = type;
         this.target = target;
         this.properties = properties;
+    }
+
+    public Long getInternalId() {
+        return internalId;
+    }
+
+    public void setInternalId(Long internalId) {
+        this.internalId = internalId;
     }
 
     public String getId() {

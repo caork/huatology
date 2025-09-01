@@ -19,6 +19,19 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
+        // Handle test user for skip-login functionality
+        if ("testuser".equals(usernameOrEmail)) {
+            return org.springframework.security.core.userdetails.User.builder()
+                    .username("testuser")
+                    .password("") // No password for test user
+                    .authorities(new SimpleGrantedAuthority("ROLE_USER"))
+                    .accountExpired(false)
+                    .accountLocked(false)
+                    .credentialsExpired(false)
+                    .disabled(false)
+                    .build();
+        }
+
         User user = userRepository.findByUsernameOrEmailAndEnabled(usernameOrEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail));
 

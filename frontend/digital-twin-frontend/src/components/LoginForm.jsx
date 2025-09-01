@@ -7,7 +7,7 @@ const LoginForm = ({ onSwitchToRegister, onClose }) => {
     password: ''
   })
   const [loading, setLoading] = useState(false)
-  const { login, error } = useAuth()
+  const { login, error, skipLogin } = useAuth()
 
   const handleChange = (e) => {
     setFormData({
@@ -74,6 +74,21 @@ const LoginForm = ({ onSwitchToRegister, onClose }) => {
           disabled={loading}
         >
           {loading ? 'Logging in...' : 'Login'}
+        </button>
+
+        <button
+          type="button"
+          onClick={async () => {
+            const result = await skipLogin()
+            if (result.success) {
+              onClose()
+            }
+          }}
+          className="auth-button"
+          style={{ background: '#95a5a6', marginTop: '10px' }}
+          disabled={loading}
+        >
+          Skip Login (Test)
         </button>
       </form>
 

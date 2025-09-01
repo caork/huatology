@@ -24,7 +24,12 @@ public class LinkController {
 
     @GetMapping("/{id}")
     public Optional<Link> getLinkById(@PathVariable String id) {
-        return linkService.getLinkById(id);
+        try {
+            Long linkId = Long.parseLong(id);
+            return linkService.getLinkById(linkId);
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
     }
 
     @GetMapping("/type/{type}")
@@ -55,6 +60,11 @@ public class LinkController {
 
     @DeleteMapping("/{id}")
     public void deleteLink(@PathVariable String id) {
-        linkService.deleteLink(id);
+        try {
+            Long linkId = Long.parseLong(id);
+            linkService.deleteLink(linkId);
+        } catch (NumberFormatException e) {
+            // Invalid ID format, ignore
+        }
     }
 }

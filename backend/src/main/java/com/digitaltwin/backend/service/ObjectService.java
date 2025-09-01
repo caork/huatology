@@ -5,7 +5,9 @@ import com.digitaltwin.backend.repository.ObjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -39,8 +41,10 @@ public class ObjectService {
     }
 
     public ObjectEntity saveObject(ObjectEntity object) {
+        // Properties are now stored as JSON String, no need to flatten
         return objectRepository.save(object);
     }
+
 
     public void deleteObject(String id) {
         objectRepository.deleteById(id);

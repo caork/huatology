@@ -92,7 +92,11 @@ public class GraphQLController {
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) input.get("properties");
 
+        // Generate a unique ID for the object
+        String id = java.util.UUID.randomUUID().toString();
+
         ObjectEntity object = new ObjectEntity();
+        object.setId(id);
         object.setType(type);
         object.setProperties(properties);
 
@@ -117,6 +121,7 @@ public class GraphQLController {
             object.setProperties(properties);
         }
 
+        // The saveObject method will handle flattening the properties
         return objectService.saveObject(object);
     }
 
@@ -148,7 +153,8 @@ public class GraphQLController {
     @PreAuthorize("isAuthenticated()")
     public Boolean deleteLink(@Argument String id) {
         try {
-            linkService.deleteLink(id);
+            Long linkId = Long.parseLong(id);
+            linkService.deleteLink(linkId);
             return true;
         } catch (Exception e) {
             return false;

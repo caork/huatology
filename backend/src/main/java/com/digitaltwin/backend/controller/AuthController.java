@@ -7,16 +7,19 @@ import com.digitaltwin.backend.dto.RegisterRequest;
 import com.digitaltwin.backend.model.User;
 import com.digitaltwin.backend.repository.UserRepository;
 import com.digitaltwin.backend.service.AuthService;
+import com.digitaltwin.backend.util.JwtUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -27,6 +30,9 @@ public class AuthController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @PostMapping("/login")
     @RateLimited(value = 5, timeWindow = 300, keyStrategy = RateLimited.KeyStrategy.IP) // 5 requests per 5 minutes per IP
@@ -69,6 +75,37 @@ public class AuthController {
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("message", "Invalid refresh token");
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    @PostMapping("/skip-login")
+    public ResponseEntity<?> skipLogin() {
+        try {
+            // Create UserDetails for token generation
+            org.springframework.security.core.userdetails.User.UserBuilder userBuilder =
+                org.springframework.security.core.userdetails.User.withUsername("testuser");
+            userBuilder.password(""); // No password for test user
+            userBuilder.roles("USER");
+            UserDetails userDetails = userBuilder.build();
+
+            // Generate tokens
+            String jwt = jwtUtil.generateToken(userDetails);
+            String refreshToken = jwtUtil.generateRefreshToken(userDetails);
+
+            return ResponseEntity.ok(new AuthResponse(
+                    jwt,
+                    refreshToken,
+                    jwtUtil.getExpirationTime(),
+                    "testuser",
+                    "test@example.com",
+                    "Test",
+                    "User",
+                    Set.of("USER")
+            ));
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Skip login failed: " + e.getMessage());
             return ResponseEntity.badRequest().body(error);
         }
     }

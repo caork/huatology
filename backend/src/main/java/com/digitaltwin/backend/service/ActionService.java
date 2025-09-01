@@ -33,7 +33,11 @@ public class ActionService {
         return actionRepository.findByObjectId(objectId);
     }
 
-    public Action performAction(String actionType, String objectId, Map<String, Object> changes, String user) {
+    public List<Action> getActionsByUser(String user) {
+        return actionRepository.findByUser(user);
+    }
+
+    public Action createAction(String actionType, String objectId, Map<String, Object> changes, String user) {
         // Log the action
         Action action = new Action();
         action.setId(java.util.UUID.randomUUID().toString());

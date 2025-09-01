@@ -13,7 +13,7 @@ NC='\033[0m' # No Color
 # Configuration
 BACKEND_PID_FILE="backend.pid"
 FRONTEND_PID_FILE="frontend.pid"
-BACKEND_PORT=8080
+BACKEND_PORT=8091
 FRONTEND_PORT=5173
 
 # Function to print colored output

@@ -45,6 +45,28 @@ is_process_running() {
     fi
 }
 
+# Function to check if process is the backend
+is_backend_process() {
+    local pid=$1
+    # Check if the process command contains spring-boot indicators
+    if ps -p $pid -o command | grep -q "spring-boot\|mvnw"; then
+        return 0  # Is backend process
+    else
+        return 1  # Not backend process
+    fi
+}
+
+# Function to check if process is the frontend
+is_frontend_process() {
+    local pid=$1
+    # Check if the process command contains frontend indicators
+    if ps -p $pid -o command | grep -q "vite\|npm.*run.*dev"; then
+        return 0  # Is frontend process
+    else
+        return 1  # Not frontend process
+    fi
+}
+
 # Function to stop process gracefully
 stop_process() {
     local pid=$1
@@ -94,11 +116,13 @@ stop_backend() {
         print_warning "Backend PID file not found. Checking for running Spring Boot processes..."
 
         # Try to find and kill any Spring Boot processes
-        local spring_pids=$(pgrep -f "spring-boot:run" || true)
+        local spring_pids=$(pgrep -f "spring-boot\|mvnw" || true)
         if [ -n "$spring_pids" ]; then
             print_status "Found Spring Boot processes: $spring_pids"
             for pid in $spring_pids; do
-                stop_process $pid "Spring Boot (PID: $pid)"
+                if is_backend_process $pid; then
+                    stop_process $pid "Spring Boot (PID: $pid)"
+                fi
             done
         else
             print_warning "No Spring Boot processes found"
@@ -107,6 +131,48 @@ stop_backend() {
     fi
 
     local backend_pid=$(cat "$BACKEND_PID_FILE")
+
+    # Check if the PID is actually running
+    if ! is_process_running $backend_pid; then
+        print_warning "Backend PID file contains stale PID ($backend_pid). Removing file and checking for actual backend processes..."
+        rm -f "$BACKEND_PID_FILE"
+
+        # Try to find actual backend processes
+        local spring_pids=$(pgrep -f "spring-boot\|mvnw" || true)
+        if [ -n "$spring_pids" ]; then
+            print_status "Found Spring Boot processes: $spring_pids"
+            for pid in $spring_pids; do
+                if is_backend_process $pid; then
+                    stop_process $pid "Spring Boot (PID: $pid)"
+                fi
+            done
+        else
+            print_warning "No Spring Boot processes found"
+        fi
+        return 0
+    fi
+
+    # Check if the running process is actually the backend
+    if ! is_backend_process $backend_pid; then
+        print_warning "PID $backend_pid is not a backend process. Removing stale PID file and checking for actual backend processes..."
+        rm -f "$BACKEND_PID_FILE"
+
+        # Try to find actual backend processes
+        local spring_pids=$(pgrep -f "spring-boot\|mvnw" || true)
+        if [ -n "$spring_pids" ]; then
+            print_status "Found Spring Boot processes: $spring_pids"
+            for pid in $spring_pids; do
+                if is_backend_process $pid; then
+                    stop_process $pid "Spring Boot (PID: $pid)"
+                fi
+            done
+        else
+            print_warning "No Spring Boot processes found"
+        fi
+        return 0
+    fi
+
+    # PID is valid and corresponds to backend process
     if stop_process $backend_pid "Backend"; then
         rm -f "$BACKEND_PID_FILE"
         return 0
@@ -118,22 +184,66 @@ stop_backend() {
 # Function to stop frontend
 stop_frontend() {
     if [ ! -f "$FRONTEND_PID_FILE" ]; then
-        print_warning "Frontend PID file not found. Checking for running Vite processes..."
+        print_warning "Frontend PID file not found. Checking for running frontend processes..."
 
-        # Try to find and kill any Vite processes
-        local vite_pids=$(pgrep -f "vite" || true)
-        if [ -n "$vite_pids" ]; then
-            print_status "Found Vite processes: $vite_pids"
-            for pid in $vite_pids; do
-                stop_process $pid "Vite (PID: $pid)"
+        # Try to find and kill any frontend processes
+        local frontend_pids=$(pgrep -f "vite\|npm.*run.*dev" || true)
+        if [ -n "$frontend_pids" ]; then
+            print_status "Found frontend processes: $frontend_pids"
+            for pid in $frontend_pids; do
+                if is_frontend_process $pid; then
+                    stop_process $pid "Frontend (PID: $pid)"
+                fi
             done
         else
-            print_warning "No Vite processes found"
+            print_warning "No frontend processes found"
         fi
         return 0
     fi
 
     local frontend_pid=$(cat "$FRONTEND_PID_FILE")
+
+    # Check if the PID is actually running
+    if ! is_process_running $frontend_pid; then
+        print_warning "Frontend PID file contains stale PID ($frontend_pid). Removing file and checking for actual frontend processes..."
+        rm -f "$FRONTEND_PID_FILE"
+
+        # Try to find actual frontend processes
+        local frontend_pids=$(pgrep -f "vite\|npm.*run.*dev" || true)
+        if [ -n "$frontend_pids" ]; then
+            print_status "Found frontend processes: $frontend_pids"
+            for pid in $frontend_pids; do
+                if is_frontend_process $pid; then
+                    stop_process $pid "Frontend (PID: $pid)"
+                fi
+            done
+        else
+            print_warning "No frontend processes found"
+        fi
+        return 0
+    fi
+
+    # Check if the running process is actually the frontend
+    if ! is_frontend_process $frontend_pid; then
+        print_warning "PID $frontend_pid is not a frontend process. Removing stale PID file and checking for actual frontend processes..."
+        rm -f "$FRONTEND_PID_FILE"
+
+        # Try to find actual frontend processes
+        local frontend_pids=$(pgrep -f "vite\|npm.*run.*dev" || true)
+        if [ -n "$frontend_pids" ]; then
+            print_status "Found frontend processes: $frontend_pids"
+            for pid in $frontend_pids; do
+                if is_frontend_process $pid; then
+                    stop_process $pid "Frontend (PID: $pid)"
+                fi
+            done
+        else
+            print_warning "No frontend processes found"
+        fi
+        return 0
+    fi
+
+    # PID is valid and corresponds to frontend process
     if stop_process $frontend_pid "Frontend"; then
         rm -f "$FRONTEND_PID_FILE"
         return 0

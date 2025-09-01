@@ -87,6 +87,11 @@ export const authService = {
     return response
   },
 
+  skipLogin: async () => {
+    const response = await axios.post(`${API_BASE_URL}/auth/skip-login`)
+    return response
+  },
+
   logout: async () => {
     const response = await api.post('/auth/logout')
     return response
